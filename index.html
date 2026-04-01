@@ -1,0 +1,165 @@
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@7.2.0/dist/aframe-extras.min.js"></script>
+</head>
+
+<body>
+  <a-scene
+    mindar-image="imageTargetSrc: ./targets_racoon_bear.mind; filterMinCF:0.001; filterBeta: 10; autoStart: true;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <!-- Camera -->
+    <a-camera
+      position="0 0 0"
+      look-controls="enabled: false"
+      cursor="fuse: false; rayOrigin: cursor;"
+      raycaster="far: 10000; objects: .clickable">
+    </a-camera>
+
+    <!-- Assets -->
+    <a-assets>
+      <a-asset-item id="model1" src="./earth-cartoon.glb"></a-asset-item>
+      <a-asset-item id="model2" src="./solar_system.glb"></a-asset-item>
+    </a-assets>
+
+    <!-- Target -->
+    <a-entity mindar-image-target="targetIndex: 0">
+
+      <!-- MODEL 1 -->
+      <a-gltf-model
+        id="modelA"
+        class="clickable"
+        src="#model1"
+        scale="1 1 1"
+        position="0 0 0"
+        animation-mixer>
+      </a-gltf-model>
+
+      <!-- MODEL 2 -->
+      <a-gltf-model
+        id="modelB"
+        src="#model2"
+        scale="1 1 1"
+        position="0 0 0"
+        visible="false"
+        animation-mixer>
+      </a-gltf-model>
+
+    </a-entity>
+
+    <!-- Lights -->
+    <a-light type="ambient" intensity="1"></a-light>
+    <a-light type="directional" position="1 2 1"></a-light>
+
+  </a-scene>
+
+<script>
+const scene = document.querySelector('a-scene');
+
+scene.addEventListener('loaded', () => {
+  const modelA = document.getElementById('modelA'); // planet
+  const modelB = document.getElementById('modelB'); // solar
+
+  let animating = false;
+
+  // 🌍 PLANET → SOLAR SYSTEM
+  modelA.addEventListener('click', () => {
+    if (animating) return;
+    animating = true;
+
+    // 🔥 remove old animations
+    modelA.removeAttribute('animation__zoom');
+    modelA.removeAttribute('animation__move');
+
+    // Zoom forward
+    modelA.setAttribute('animation__zoom', {
+      property: 'scale',
+      to: '0.05 0.05 0.05',
+      dur: 800,
+      easing: 'easeInQuad'
+    });
+
+    modelA.setAttribute('animation__move', {
+      property: 'position',
+      to: '0 0 0.5',
+      dur: 800,
+      easing: 'easeInQuad'
+    });
+
+    setTimeout(() => {
+      modelA.setAttribute('visible', false);
+      modelA.classList.remove('clickable');
+
+      // 🔥 RESET modelA for next time
+      modelA.setAttribute('scale', '1 1 1');
+      modelA.setAttribute('position', '0 0 0');
+
+      modelB.setAttribute('visible', true);
+      modelB.classList.add('clickable');
+
+      // start tiny → explode
+      modelB.setAttribute('scale', '10 10 10');
+
+      modelB.removeAttribute('animation__explode');
+
+      modelB.setAttribute('animation__explode', {
+        property: 'scale',
+        to: '2 2 2',
+        dur: 1200,
+        easing: 'easeInCubic'
+      });
+
+      animating = false;
+    }, 800);
+  });
+
+  // 🌌 SOLAR SYSTEM → PLANET
+  modelB.addEventListener('click', () => {
+    if (animating) return;
+    animating = true;
+
+    // remove old animation
+    modelB.removeAttribute('animation__shrink');
+
+    modelB.setAttribute('animation__shrink', {
+      property: 'scale',
+      to: '10 10 10',
+      dur: 1000,
+      easing: 'easeInCubic'
+    });
+
+    setTimeout(() => {
+      modelB.setAttribute('visible', false);
+      modelB.classList.remove('clickable');
+
+      // reset solar model
+      modelB.setAttribute('scale', '1 1 1');
+
+      modelA.setAttribute('visible', true);
+      modelA.classList.add('clickable');
+
+      // grow planet back
+      modelA.setAttribute('scale', '0.001 0.001 0.001');
+
+      modelA.removeAttribute('animation__grow');
+
+      modelA.setAttribute('animation__grow', {
+        property: 'scale',
+        to: '1 1 1',
+        dur: 1000,
+        easing: 'easeInCubic'
+      });
+
+      animating = false;
+    }, 1500);
+  });
+
+});
+</script>
+</body>
+</html>
